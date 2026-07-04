@@ -7,6 +7,7 @@ import { Menu, Moon, Search, ShoppingCart, Sun, User, X } from "lucide-react";
 import { onAuthStateChanged, signOut, type User as FirebaseUser } from "firebase/auth";
 import { useCart } from "@/context/CartContext";
 import { auth } from "@/lib/firebase";
+import { Suspense } from "react";
 
 const ADMIN_EMAIL = "[clownalphareal11@gmail.com](mailto:clownalphareal11@gmail.com)";
 const THEME_STORAGE_KEY = "shopera-theme";
@@ -24,35 +25,16 @@ type NavbarProps = {
 	onSearch?: (query: string) => void;
 };
 
-export default function Navbar({ onSearch }: NavbarProps) {
+type NavbarSearchProps = {
+	onSearch?: (query: string) => void;
+	variant: "desktop" | "mobile";
+};
+
+function NavbarSearch({ onSearch, variant }: NavbarSearchProps) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "");
-	const [theme, setTheme] = useState<"light" | "dark">(() => {
-		if (typeof window === "undefined") {
-			return "light";
-		}
-
-		const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-		return savedTheme === "dark" || savedTheme === "light" ? savedTheme : "light";
-	});
-	const [user, setUser] = useState<FirebaseUser | null>(null);
-	const { totalItemCount } = useCart();
-
-	useEffect(() => {
-		const unsubscribe = onAuthStateChanged(auth, (user) => {
-			setUser(user);
-		});
-
-		return () => unsubscribe();
-	}, []);
-
-	useEffect(() => {
-		document.documentElement.classList.toggle("dark", theme === "dark");
-		localStorage.setItem(THEME_STORAGE_KEY, theme);
-	}, [theme]);
 
 	useEffect(() => {
 		const timeoutId = window.setTimeout(() => {
@@ -77,6 +59,76 @@ export default function Navbar({ onSearch }: NavbarProps) {
 			router.replace(nextPath, { scroll: false });
 		}
 	};
+
+	if (variant === "desktop") {
+		return (
+			<div
+				role="search"
+				className="hidden flex-1 items-center md:flex"
+			>
+				<div className="group relative w-full">
+					<Search
+						size={18}
+						className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 transition group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400"
+					/>
+					<input
+						type="text"
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						onKeyDown={handleSearchKeyDown}
+						placeholder="Search for products, brands and more"
+						className="h-11 w-full rounded-full border border-slate-300/90 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 pl-11 pr-4 text-sm text-slate-900 dark:text-white outline-none transition-all duration-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-300 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500/30"
+					/>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div role="search" className="mb-4">
+			<div className="group relative">
+				<Search
+					size={18}
+					className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 transition group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400"
+				/>
+				<input
+					type="text"
+					value={searchQuery}
+					onChange={(e) => setSearchQuery(e.target.value)}
+					onKeyDown={handleSearchKeyDown}
+					placeholder="Search products"
+					className="h-11 w-full rounded-full border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 pl-11 pr-4 text-sm text-slate-900 dark:text-white outline-none transition-all duration-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-300 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500/30"
+				/>
+			</div>
+		</div>
+	);
+}
+
+function NavbarContent({ onSearch }: NavbarProps) {
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const [theme, setTheme] = useState<"light" | "dark">(() => {
+		if (typeof window === "undefined") {
+			return "light";
+		}
+
+		const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+		return savedTheme === "dark" || savedTheme === "light" ? savedTheme : "light";
+	});
+	const [user, setUser] = useState<FirebaseUser | null>(null);
+	const { totalItemCount } = useCart();
+
+	useEffect(() => {
+		const unsubscribe = onAuthStateChanged(auth, (user) => {
+			setUser(user);
+		});
+
+		return () => unsubscribe();
+	}, []);
+
+	useEffect(() => {
+		document.documentElement.classList.toggle("dark", theme === "dark");
+		localStorage.setItem(THEME_STORAGE_KEY, theme);
+	}, [theme]);
 
 	const handleLogout = async () => {
 		try {
@@ -107,25 +159,9 @@ export default function Navbar({ onSearch }: NavbarProps) {
 					Shopera
 				</Link>
 
-				<div
-					role="search"
-					className="hidden flex-1 items-center md:flex"
-				>
-					<div className="group relative w-full">
-						<Search
-							size={18}
-							className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 transition group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400"
-						/>
-						<input
-							type="text"
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							onKeyDown={handleSearchKeyDown}
-							placeholder="Search for products, brands and more"
-							className="h-11 w-full rounded-full border border-slate-300/90 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 pl-11 pr-4 text-sm text-slate-900 dark:text-white outline-none transition-all duration-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-300 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500/30"
-						/>
-					</div>
-				</div>
+				<Suspense fallback={null}>
+					<NavbarSearch onSearch={onSearch} variant="desktop" />
+				</Suspense>
 
 				<div className="ml-auto hidden items-center gap-2 md:flex">
 					<button
@@ -208,22 +244,9 @@ export default function Navbar({ onSearch }: NavbarProps) {
 
 			{isMobileMenuOpen && (
 				<div className="border-t border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-4 md:hidden">
-					<div role="search" className="mb-4">
-						<div className="group relative">
-							<Search
-								size={18}
-								className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 transition group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400"
-							/>
-							<input
-								type="text"
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								onKeyDown={handleSearchKeyDown}
-								placeholder="Search products"
-								className="h-11 w-full rounded-full border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 pl-11 pr-4 text-sm text-slate-900 dark:text-white outline-none transition-all duration-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-300 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500/30"
-							/>
-						</div>
-					</div>
+					<Suspense fallback={null}>
+						<NavbarSearch onSearch={onSearch} variant="mobile" />
+					</Suspense>
 
 					<div className="space-y-2">
 						{user ? (
@@ -295,5 +318,13 @@ export default function Navbar({ onSearch }: NavbarProps) {
 				</div>
 			)}
 		</header>
+	);
+}
+
+export default function Navbar(props: NavbarProps) {
+	return (
+		<Suspense fallback={null}>
+			<NavbarContent {...props} />
+		</Suspense>
 	);
 }

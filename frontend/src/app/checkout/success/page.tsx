@@ -3,8 +3,18 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, ShoppingBag } from "lucide-react";
+import { Suspense } from "react";
 
 export default function CheckoutSuccessPage() {
+	return (
+		<Suspense fallback={null}>
+			<CheckoutSuccessContent />
+		</Suspense>
+	);
+
+}
+
+function CheckoutSuccessContent() {
 	const searchParams = useSearchParams();
 	const orderId = searchParams.get("orderId");
 	const paymentId = searchParams.get("paymentId");
